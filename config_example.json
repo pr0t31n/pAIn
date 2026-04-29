@@ -1,0 +1,21 @@
+{
+    "_comment": "pAIn target configuration — copy and edit for your engagement",
+    "endpoint": "https://api.example.com/v1/analyze",
+    "auth": {
+        "type": "bearer",
+        "_type_options": ["bearer", "apikey", "none"],
+        "token": "sk-YOUR_API_KEY_HERE",
+        "header": "Authorization"
+    },
+    "file_field": "file",
+    "extra_fields": {
+        "model": "whisper-1",
+        "response_format": "json"
+    },
+    "response_format": "json",
+    "response_field": "text",
+    "_response_field_note": "JSON key in the AI response that contains the output text",
+    "timeout": 30,
+    "verify_ssl": true,
+    "notes": "Target: Acme Corp transcription API — authorized engagement 2025-001"
+}
