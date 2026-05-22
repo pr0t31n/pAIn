@@ -16,7 +16,7 @@ Usage:
 """
 from __future__ import annotations
 
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 
 import argparse
 import base64
@@ -1148,6 +1148,59 @@ def _write_findings(results: list, out_dir: Path, target_host: str) -> Path:
     return out_path
 
 
+# ── Universal output dual-write (Tier 1 migration) ───────────────────────────
+def _u_dual_write_meta(project_dir: Path, *, tool: str, version: str,
+                       client_short: str = "", client_name: str = "",
+                       engagement_name: str = "", target: str = "") -> bool:
+    """Write universal meta.json (schema 1.0). Graceful no-op when
+    /opt/pr0t31n/shared/pr0t31n_schema.py is not installed."""
+    try:
+        import sys as _s
+        if "/opt/pr0t31n/shared" not in _s.path:
+            _s.path.insert(0, "/opt/pr0t31n/shared")
+        import pr0t31n_schema as _us
+    except ImportError:
+        return False
+    try:
+        meta = _us.make_meta(
+            tool=tool, version=version,
+            client_short=client_short or "unknown",
+            client_name=client_name or client_short or "unknown",
+            engagement_name=engagement_name or f"{tool} run",
+            target=target or "",
+        )
+        _us.atomic_write_json(Path(project_dir) / "meta.json", meta)
+        return True
+    except Exception:
+        return False
+
+
+def _u_write_summary(project_dir: Path, *, tool: str, version: str,
+                     scan_start: str, scan_end: str, target: str,
+                     total_findings: int, risk_counts: dict,
+                     success: bool = True) -> bool:
+    """Write universal summary.json (schema 1.0). Graceful no-op."""
+    try:
+        import sys as _s
+        if "/opt/pr0t31n/shared" not in _s.path:
+            _s.path.insert(0, "/opt/pr0t31n/shared")
+        import pr0t31n_schema as _us
+    except ImportError:
+        return False
+    try:
+        summary = _us.make_summary(
+            tool=tool, version=version,
+            scan_start=scan_start, scan_end=scan_end,
+            target=target, success=success,
+            total_findings=total_findings,
+            risk_counts=risk_counts,
+        )
+        _us.atomic_write_json(Path(project_dir) / "summary.json", summary)
+        return True
+    except Exception:
+        return False
+
+
 # ── test orchestrator ─────────────────────────────────────────────────────────
 
 FORMAT_MAKERS = {
@@ -1319,6 +1372,27 @@ class PainRunner:
         if not self.dry_run:
             findings_path = _write_findings(self.results, self.out, target_host)
             _ok(f"Findings : {findings_path}")
+            # Universal output dual-write (schema 1.0): meta.json + summary.json
+            _u_dual_write_meta(
+                self.out, tool="pain", version=VERSION,
+                client_short=getattr(self, "client_short", ""),
+                client_name=getattr(self, "client_name", ""),
+                engagement_name=getattr(self, "engagement_name", ""),
+                target=target_host,
+            )
+            _risk_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "INFO": 0}
+            for _r in self.results:
+                _rk = (_r.get("severity") or "").upper()
+                if _rk in _risk_counts:
+                    _risk_counts[_rk] += 1
+            _u_write_summary(
+                self.out, tool="pain", version=VERSION,
+                scan_start=getattr(self, "_scan_start_iso", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")),
+                scan_end=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                target=target_host,
+                total_findings=sum(_risk_counts.values()),
+                risk_counts=_risk_counts,
+            )
             if vulns:
                 print()
                 _warn("Vulnerable injection vectors:")
