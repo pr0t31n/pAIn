@@ -16,7 +16,7 @@ Usage:
 """
 from __future__ import annotations
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 
 import argparse
 import base64
@@ -30,6 +30,25 @@ import struct
 import subprocess
 import sys
 import tempfile
+
+# 2026-06-12 cross-cutting #156: route subprocess through pr0t31n_tool_runner
+try:
+    if "/opt/pr0t31n/shared" not in sys.path:
+        sys.path.insert(0, "/opt/pr0t31n/shared")
+    import pr0t31n_tool_runner as _ur
+except ImportError:
+    _ur = None
+
+
+def _pain_run(cmd, *, timeout: int = 60, check: bool = True,
+              output_file: "str | None" = None, tool_name: str = ""):
+    """Centralised subprocess wrapper.  Routes through pr0t31n_tool_runner
+    when available so each invocation emits a `.log` sibling per §14."""
+    if _ur is not None:
+        tn = tool_name or (cmd[0] if cmd else "")
+        return _ur.run_tool(cmd, timeout=timeout, output_file=output_file,
+                              tool_name=tn)
+    return subprocess.run(cmd, capture_output=True, check=check, timeout=timeout)
 import time
 import wave
 import zipfile
@@ -184,9 +203,9 @@ def _speak_to_wav(text: str, out: Path) -> bool:
     if not exe:
         return False
     try:
-        subprocess.run(
+        _pain_run(
             [exe, "-w", str(out), "--", text[:250]],
-            capture_output=True, check=True, timeout=15,
+            timeout=15, output_file=str(out), tool_name="espeak",
         )
         return out.exists() and out.stat().st_size > 100
     except Exception:
@@ -197,9 +216,9 @@ def _ffmpeg_encode(src: Path, dst: Path, codec_args: list[str]) -> bool:
     if not HAS_FFMPEG:
         return False
     try:
-        subprocess.run(
+        _pain_run(
             ["ffmpeg", "-y", "-i", str(src)] + codec_args + [str(dst)],
-            capture_output=True, check=True, timeout=30,
+            timeout=30, output_file=str(dst), tool_name="ffmpeg",
         )
         return dst.exists() and dst.stat().st_size > 0
     except Exception:
@@ -211,11 +230,11 @@ def _ffmpeg_silence(dst: Path, codec_args: list[str],
     if not HAS_FFMPEG:
         return False
     try:
-        subprocess.run(
+        _pain_run(
             ["ffmpeg", "-y",
              "-f", "lavfi", "-i", f"anullsrc=r={rate}:cl=mono",
              "-t", str(duration)] + codec_args + [str(dst)],
-            capture_output=True, check=True, timeout=30,
+            timeout=30, output_file=str(dst), tool_name="ffmpeg",
         )
         return dst.exists() and dst.stat().st_size > 0
     except Exception:
