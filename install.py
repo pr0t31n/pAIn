@@ -23,6 +23,16 @@ def _has(binary: str) -> bool:
     return shutil.which(binary) is not None
 
 
+def _pip_installed(pkg_spec):
+    import importlib.util
+    name = pkg_spec.split(">=")[0].split("==")[0].split("[")[0].split("<")[0].strip()
+    _IMPORT_MAP = {
+        "Pillow": "PIL", "pillow-heif": "pillow_heif",
+    }
+    mod = _IMPORT_MAP.get(name, name.replace("-", "_"))
+    return importlib.util.find_spec(mod) is not None
+
+
 # ── Python version check ──────────────────────────────────────────────────────
 if sys.version_info < MIN_PYTHON:
     print(f"ERROR: Python {'.'.join(map(str, MIN_PYTHON))}+ required "
@@ -64,11 +74,9 @@ def install_pip_deps():
     print("\n[2] Python packages")
     req = INSTALL_DIR / "requirements.txt"
     if req.exists():
-        _run([sys.executable, "-m", "pip", "install",
-              "--break-system-packages", "-r", str(req)],
-             check=False)
+        packages = [line.strip() for line in req.read_text().splitlines()
+                    if line.strip() and not line.startswith("#")]
     else:
-        # Inline fallback if requirements.txt not present
         packages = [
             "requests>=2.28.0",
             "Pillow>=10.0.0",
@@ -78,9 +86,18 @@ def install_pip_deps():
             "pillow-heif>=0.13.0",
             "colorama>=0.4.6",
         ]
-        _run([sys.executable, "-m", "pip", "install",
-              "--break-system-packages"] + packages,
-             check=False)
+    missing = []
+    for pkg in packages:
+        if _pip_installed(pkg):
+            print(f"  ✓ {pkg} already installed")
+        else:
+            missing.append(pkg)
+    if not missing:
+        print("  All Python packages already installed")
+        return
+    _run([sys.executable, "-m", "pip", "install",
+          "--break-system-packages"] + missing,
+         check=False)
 
 
 def create_dirs():
