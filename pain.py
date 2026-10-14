@@ -1399,6 +1399,15 @@ class PainRunner:
                 engagement_name=getattr(self, "engagement_name", ""),
                 target=target_host,
             )
+            try:
+                import pr0t31n_dep_snapshot as _ds
+                _ds.write_snapshot(
+                    self.out, "pain", VERSION,
+                    binaries=["ffmpeg", "espeak-ng", "espeak"],
+                    pip_packages=["requests", "Pillow", "piexif", "reportlab", "mutagen", "pillow-heif", "colorama"],
+                )
+            except Exception:
+                pass
             _risk_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "INFO": 0}
             for _r in self.results:
                 _rk = (_r.get("severity") or "").upper()

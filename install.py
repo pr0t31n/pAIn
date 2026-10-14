@@ -23,6 +23,26 @@ def _has(binary: str) -> bool:
     return shutil.which(binary) is not None
 
 
+
+def _dpkg_installed(pkg):
+    try:
+        r = subprocess.run(["dpkg", "-s", pkg],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return r.returncode == 0
+    except FileNotFoundError:
+        return False
+
+
+def _rpm_installed(pkg):
+    try:
+        return subprocess.run(
+            ["rpm", "-q", pkg],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        ).returncode == 0
+    except FileNotFoundError:
+        return False
+
+
 def _pip_installed(pkg_spec):
     import importlib.util
     name = pkg_spec.split(">=")[0].split("==")[0].split("[")[0].split("<")[0].strip()
@@ -50,7 +70,8 @@ def install_system_deps():
     else:
         print("  Installing ffmpeg ...")
         if sys.platform.startswith("linux") and _has("apt-get"):
-            _run(["apt-get", "install", "-y", "ffmpeg"], check=False)
+            if not _dpkg_installed("ffmpeg"):
+                _run(["apt-get", "install", "-y", "ffmpeg"], check=False)
         elif sys.platform == "darwin" and _has("brew"):
             _run(["brew", "install", "ffmpeg"], check=False)
         else:
@@ -62,7 +83,8 @@ def install_system_deps():
     else:
         print("  Installing espeak-ng (optional — audio speech injection) ...")
         if sys.platform.startswith("linux") and _has("apt-get"):
-            _run(["apt-get", "install", "-y", "espeak-ng"], check=False)
+            if not _dpkg_installed("espeak-ng"):
+                _run(["apt-get", "install", "-y", "espeak-ng"], check=False)
         elif sys.platform == "darwin" and _has("brew"):
             _run(["brew", "install", "espeak"], check=False)
         else:
