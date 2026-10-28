@@ -1262,6 +1262,12 @@ class PainRunner:
             self.api = None
         self.results: list = []
 
+    def _flush_findings(self, target_host: str) -> None:
+        try:
+            _write_findings(self.results, self.out, target_host)
+        except Exception:
+            pass
+
     def run(self, formats: list[str], categories: list[str]) -> list:
         self.resp_dir.mkdir(parents=True, exist_ok=True)
         target_host = "dry-run"
@@ -1369,6 +1375,7 @@ class PainRunner:
                                 _ok(f"  RESILIENT  —  {cat} via {strategy}")
 
                         self.results.append(result)
+                        self._flush_findings(target_host)
 
         # ── Summary ───────────────────────────────────────────────────────
         print()
