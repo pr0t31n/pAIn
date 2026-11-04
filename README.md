@@ -1,5 +1,8 @@
 # pAIn — AI Pipeline Prompt-Injection Red-Team Tool
 
+> [!CAUTION]
+> **Under Development — Untested.** This tool has not been validated in production engagements. Features may be incomplete, unstable, or produce unreliable results. Do not rely on its output for deliverables without independent verification.
+
 **pr0t31n toolkit — authorized engagements only.**
 
 pAIn tests AI file-ingestion pipelines (transcription, classification) for
