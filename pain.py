@@ -18,6 +18,8 @@ from __future__ import annotations
 
 VERSION = Path(__file__).resolve().parent.joinpath("VERSION").read_text().strip()
 
+_MANAGED = os.environ.get("CRUCIBLE_MANAGED") == "1"
+
 import argparse
 import base64
 import io
@@ -73,6 +75,30 @@ def _warn(m): print(f"  {Fore.YELLOW}[!]{Style.RESET_ALL} {m}")
 def _err(m):  print(f"  {Fore.RED}[-]{Style.RESET_ALL} {m}")
 def _vuln(m): print(f"  {Fore.LIGHTRED_EX}[VULN]{Style.RESET_ALL} {m}")
 def _skip(m): print(f"  {Fore.LIGHTCYAN_EX}[SKIP]{Style.RESET_ALL} {m}")
+
+
+# ── Crucible protocol tokens (managed mode) ─────────────────────────────────
+
+def _crucible_log(msg):
+    if not _MANAGED:
+        return
+    print(f"__CRUCIBLE_LOG__:{json.dumps({'ts': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'msg': str(msg)})}", flush=True)
+
+def _crucible_err(msg):
+    if not _MANAGED:
+        return
+    print(f"__CRUCIBLE_ERR__:{json.dumps({'ts': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'msg': str(msg)})}", flush=True)
+
+def _crucible_status(phase, progress=0, detail=""):
+    if not _MANAGED:
+        return
+    print(f"__CRUCIBLE_STATUS__:{json.dumps({'ts': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), 'phase': phase, 'progress': progress, 'detail': detail})}", flush=True)
+
+def _crucible_finding(finding_data):
+    if not _MANAGED:
+        return
+    print(f"__CRUCIBLE_FINDING__:{json.dumps({'ts': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'), **finding_data})}", flush=True)
+
 
 # ── optional dependency detection ───────────────────────────────────────────
 def _has(mod: str) -> bool:
@@ -1220,6 +1246,162 @@ def _u_write_summary(project_dir: Path, *, tool: str, version: str,
         return False
 
 
+# ── Third-party tool orchestration ────────────────────────────────────────────
+#
+# Credits:
+#   nuclei — ProjectDiscovery (https://github.com/projectdiscovery/nuclei)
+#            Licensed under MIT License
+#   garak  — NVIDIA Corporation (https://github.com/NVIDIA/garak)
+#            Licensed under Apache License 2.0
+
+def _run_nuclei_ai(target_url, output_dir, *, timeout=600):
+    """Run nuclei with AI-specific templates against the target."""
+    nuclei_bin = shutil.which("nuclei")
+    if not nuclei_bin:
+        _warn("nuclei not found — skipping AI template scan")
+        return []
+
+    out_path = Path(output_dir) / "nuclei_ai_results.json"
+    ai_tags = "ai,llm,ollama,gradio,mlflow,vllm,triton,bentoml,litellm,torchserve,huggingface,langflow"
+
+    cmd = [
+        nuclei_bin, "-u", target_url,
+        "-tags", ai_tags,
+        "-jsonl", "-o", str(out_path),
+        "-silent", "-no-color",
+        "-timeout", "10",
+    ]
+
+    _crucible_log(f"Running nuclei AI templates against {target_url}")
+    _crucible_status("nuclei_ai", 0, f"Scanning {target_url} with AI templates")
+
+    try:
+        _pain_run(cmd, timeout=timeout, check=False,
+                  output_file=str(out_path), tool_name="nuclei")
+    except Exception as e:
+        _crucible_err(f"nuclei AI scan failed: {e}")
+        _err(f"nuclei AI scan failed: {e}")
+        return []
+
+    findings = []
+    if out_path.exists():
+        for line in out_path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                severity = (entry.get("info", {}).get("severity") or "info").upper()
+                if severity not in ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"):
+                    severity = "INFO"
+                finding = {
+                    "title": f"[nuclei] {entry.get('info', {}).get('name', 'Unknown')}",
+                    "datetime": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "ip": entry.get("ip", ""),
+                    "port": int(entry.get("port") or 0),
+                    "hostname": entry.get("host", ""),
+                    "risk": severity,
+                    "command": " ".join(cmd),
+                    "description": entry.get("info", {}).get("description", ""),
+                    "output": entry.get("response", "")[:500],
+                    "cves": ",".join(entry.get("info", {}).get("classification", {}).get("cve-id", []) or []),
+                    "sources": "nuclei AI template scan — ProjectDiscovery (MIT License)",
+                    "service": "AI Service",
+                    "output_file": str(out_path),
+                    "affected": entry.get("matched-at", ""),
+                    "exploitdb": False,
+                    "metasploit": False,
+                    "exploit_details": [],
+                    "owasp": "",
+                    "nist": "",
+                    "remediation": entry.get("info", {}).get("remediation", "See nuclei template for remediation guidance."),
+                    "tool": "pain",
+                }
+                findings.append(finding)
+                _crucible_finding(finding)
+            except (json.JSONDecodeError, KeyError):
+                continue
+
+    _crucible_status("nuclei_ai", 100, f"nuclei AI scan complete — {len(findings)} findings")
+    _ok(f"nuclei AI templates: {len(findings)} findings")
+    return findings
+
+
+def _run_garak(target_url, output_dir, *, probes=None, timeout=1200):
+    """Run garak LLM vulnerability scanner against the target."""
+    garak_bin = shutil.which("garak")
+    if not garak_bin:
+        _warn("garak not found — skipping LLM vulnerability scan")
+        _warn("  Install: pip install garak  (NVIDIA, Apache 2.0)")
+        return []
+
+    out_dir = Path(output_dir) / "garak_results"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    report_file = out_dir / "garak_report.jsonl"
+
+    cmd = [
+        garak_bin,
+        "--model_type", "rest",
+        "--model_name", target_url,
+        "--report_prefix", str(out_dir / "garak"),
+    ]
+    if probes:
+        cmd.extend(["--probes", probes])
+
+    _crucible_log(f"Running garak against {target_url}")
+    _crucible_status("garak", 0, "LLM vulnerability scan via garak")
+
+    try:
+        _pain_run(cmd, timeout=timeout, check=False,
+                  output_file=str(report_file), tool_name="garak")
+    except Exception as e:
+        _crucible_err(f"garak scan failed: {e}")
+        _err(f"garak scan failed: {e}")
+        return []
+
+    findings = []
+    if report_file.exists():
+        for line in report_file.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+                if entry.get("status") != "fail":
+                    continue
+                finding = {
+                    "title": f"[garak] {entry.get('probe', 'Unknown')} — {entry.get('detector', '')}",
+                    "datetime": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "ip": "",
+                    "port": 0,
+                    "hostname": target_url,
+                    "risk": "HIGH",
+                    "command": " ".join(cmd),
+                    "description": f"garak probe '{entry.get('probe', '')}' failed: LLM vulnerability detected via detector '{entry.get('detector', '')}'",
+                    "output": json.dumps(entry, indent=2)[:500],
+                    "cves": "",
+                    "sources": "garak LLM vulnerability scanner — NVIDIA Corporation (Apache 2.0)",
+                    "service": "LLM",
+                    "output_file": str(report_file),
+                    "affected": target_url,
+                    "exploitdb": False,
+                    "metasploit": False,
+                    "exploit_details": [],
+                    "owasp": "LLM01:2025 — Prompt Injection",
+                    "nist": "NIST AI RMF: GOVERN 1.7, MANAGE 2.4",
+                    "remediation": "Review garak probe results and implement appropriate input validation, output filtering, and system prompt hardening.",
+                    "tool": "pain",
+                }
+                findings.append(finding)
+                _crucible_finding(finding)
+            except (json.JSONDecodeError, KeyError):
+                continue
+
+    _crucible_status("garak", 100, f"garak scan complete — {len(findings)} findings")
+    _ok(f"garak: {len(findings)} findings")
+    return findings
+
+
 # ── test orchestrator ─────────────────────────────────────────────────────────
 
 FORMAT_MAKERS = {
@@ -1278,6 +1460,7 @@ class PainRunner:
                 target_host = "unknown"
 
         total = found = 0
+        _crucible_status("testing", 0, f"Testing {len(formats)} formats x {len(categories)} categories against {target_host}")
 
         for fmt in formats:
             if fmt not in FORMAT_MAKERS:
@@ -1365,12 +1548,21 @@ class PainRunner:
                                 "result":   ev,
                             }, indent=2))
 
-                            if ev["canary_found"]:
+                            if ev["canary_found"] or ev.get("stored_found"):
                                 found += 1
                                 _vuln(
                                     f"  [{ev['severity']:8s}]  "
                                     f"{ev['verdict']}  —  {cat} via {strategy}"
                                 )
+                                _crucible_finding({
+                                    "title": f"AI Prompt Injection — {cat.replace('_',' ').title()} via {strategy.replace('_',' ')}",
+                                    "risk": ev["severity"],
+                                    "ip": target_host,
+                                    "port": 0,
+                                    "detail": ev["detail"],
+                                    "category": cat,
+                                    "strategy": strategy,
+                                })
                             else:
                                 _ok(f"  RESILIENT  —  {cat} via {strategy}")
 
@@ -1517,6 +1709,28 @@ def main() -> None:
                     help="Whisper transcription mode — detect verbatim storage of injected spoken text "
                          "as a distinct STORED_TEXT_INJECTION finding (severity: HIGH)")
 
+    # ── Crucible managed mode / AI type ───────────────────────────────────
+    ap.add_argument("--ai-type",      choices=["auto", "chat", "file-upload", "api", "transcription"],
+                    default="auto", help="AI target type (default: auto-detect)")
+    ap.add_argument("--model",        metavar="NAME",
+                    help="Target model identifier")
+    ap.add_argument("--output-dir",   metavar="DIR",
+                    help="Alias for --output (Crucible compat)")
+    ap.add_argument("--auth-method",  choices=["none", "bearer", "cookie", "apikey", "basic", "custom"],
+                    default="none", help="Authentication method")
+    ap.add_argument("--bearer-token", metavar="TOKEN",
+                    help="Bearer token (alternative to --api-key)")
+    ap.add_argument("--auth-header",  metavar="Key:Value",
+                    help="Full auth header value")
+
+    # ── Third-party tool orchestration ────────────────────────────────────
+    ap.add_argument("--nuclei-ai",    action="store_true",
+                    help="Run nuclei with AI-specific vulnerability templates against target")
+    ap.add_argument("--garak",        action="store_true",
+                    help="Run garak LLM vulnerability scanner against target (requires garak installed)")
+    ap.add_argument("--garak-probes", metavar="LIST",
+                    help="Comma-separated garak probe names (default: all)")
+
     ap.add_argument("--list",         action="store_true",
                     help="List available formats and payload categories")
     ap.add_argument("--version",      action="version", version=f"pAIn {VERSION}")
@@ -1611,9 +1825,26 @@ def main() -> None:
     config["timeout"]    = args.timeout
     config["verify_ssl"] = not args.no_ssl_verify
 
+    # ── new auth args (Crucible passthrough) ─────────────────────────────
+    if args.bearer_token:
+        config.setdefault("auth", {})["type"] = "bearer"
+        config["auth"]["token"] = args.bearer_token
+    if args.auth_header:
+        if ":" in args.auth_header:
+            k, _, v = args.auth_header.partition(":")
+            config.setdefault("extra_headers", {})[k.strip()] = v.strip()
+    if args.auth_method and args.auth_method != "none":
+        config.setdefault("auth", {})["type"] = args.auth_method
+
+    # ── output-dir alias (Crucible compat) ───────────────────────────────
+    output_path = args.output_dir or args.output
+
     if not args.dry_run and not config.get("endpoint"):
         _err("--target required (or use --dry-run to generate files only)")
         sys.exit(1)
+
+    if _MANAGED:
+        _crucible_status("init", 0, "pAIn starting")
 
     all_fmts = list(FORMAT_MAKERS.keys())
     all_cats = list(PAYLOADS.keys())
@@ -1628,7 +1859,7 @@ def main() -> None:
     else:
         categories = [c.strip() for c in args.categories.split(",")]
 
-    out_dir = Path(args.output)
+    out_dir = Path(output_path)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     runner = PainRunner(
@@ -1638,6 +1869,35 @@ def main() -> None:
         whisper_mode=args.whisper_mode,
     )
     runner.run(formats, categories)
+
+    # ── Third-party tool orchestration ────────────────────────────────────
+    extra_findings = []
+    if args.nuclei_ai and config.get("endpoint"):
+        _info("Running nuclei AI template scan...")
+        extra_findings.extend(_run_nuclei_ai(config["endpoint"], str(out_dir)))
+
+    if args.garak and config.get("endpoint"):
+        _info("Running garak LLM vulnerability scan...")
+        extra_findings.extend(_run_garak(
+            config["endpoint"], str(out_dir),
+            probes=args.garak_probes,
+        ))
+
+    if extra_findings:
+        findings_path = out_dir / "findings.json"
+        existing = []
+        if findings_path.exists():
+            try:
+                existing = json.loads(findings_path.read_text())
+            except Exception:
+                pass
+        existing.extend(extra_findings)
+        findings_path.write_text(json.dumps(existing, indent=2))
+        _ok(f"Total findings (including third-party): {len(existing)}")
+
+    if _MANAGED:
+        _crucible_status("complete", 100, "pAIn finished")
+
     print()
 
 
