@@ -1141,8 +1141,7 @@ def _evaluate(response: str, canary: str, category: str, strategy: str,
 
 # ── findings writer ───────────────────────────────────────────────────────────
 
-def _write_findings(results: list, out_dir: Path, target_host: str,
-                    fdb=None) -> Path:
+def _write_findings(results: list, out_dir: Path, target_host: str) -> Path:
     """Emit findings.json in the pr0t31n universal schema."""
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     findings: list = []
@@ -1195,13 +1194,6 @@ def _write_findings(results: list, out_dir: Path, target_host: str,
                 "and pass only structured metadata rather than raw extracted text."
             ),
         })
-
-    if fdb:
-        for f in findings:
-            try:
-                fdb.insert_finding(f)
-            except Exception:
-                pass
 
     out_path = out_dir / "findings.json"
     out_path.write_text(json.dumps(findings, indent=2))
@@ -1468,7 +1460,7 @@ class PainRunner:
 
     def _flush_findings(self, target_host: str) -> None:
         try:
-            _write_findings(self.results, self.out, target_host, fdb=self._fdb)
+            _write_findings(self.results, self.out, target_host)
         except Exception:
             pass
 
