@@ -41,6 +41,13 @@ try:
 except ImportError:
     _ur = None
 
+try:
+    if "/opt/pr0t31n/shared" not in sys.path:
+        sys.path.insert(0, "/opt/pr0t31n/shared")
+    import pr0t31n_findings_db as _fdb_mod
+except ImportError:
+    _fdb_mod = None
+
 
 def _pain_run(cmd, *, timeout: int = 60, check: bool = True,
               output_file: "str | None" = None, tool_name: str = ""):
@@ -1134,7 +1141,8 @@ def _evaluate(response: str, canary: str, category: str, strategy: str,
 
 # ── findings writer ───────────────────────────────────────────────────────────
 
-def _write_findings(results: list, out_dir: Path, target_host: str) -> Path:
+def _write_findings(results: list, out_dir: Path, target_host: str,
+                    fdb=None) -> Path:
     """Emit findings.json in the pr0t31n universal schema."""
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     findings: list = []
@@ -1187,6 +1195,13 @@ def _write_findings(results: list, out_dir: Path, target_host: str) -> Path:
                 "and pass only structured metadata rather than raw extracted text."
             ),
         })
+
+    if fdb:
+        for f in findings:
+            try:
+                fdb.insert_finding(f)
+            except Exception:
+                pass
 
     out_path = out_dir / "findings.json"
     out_path.write_text(json.dumps(findings, indent=2))
@@ -1443,10 +1458,17 @@ class PainRunner:
         else:
             self.api = None
         self.results: list = []
+        self._fdb = None
+        _db_path = os.environ.get("PR0T31N_FINDINGS_DB")
+        if _db_path and _fdb_mod:
+            try:
+                self._fdb = _fdb_mod.FindingsDB(_db_path)
+            except Exception:
+                self._fdb = None
 
     def _flush_findings(self, target_host: str) -> None:
         try:
-            _write_findings(self.results, self.out, target_host)
+            _write_findings(self.results, self.out, target_host, fdb=self._fdb)
         except Exception:
             pass
 
@@ -1568,6 +1590,7 @@ class PainRunner:
 
                         self.results.append(result)
                         self._flush_findings(target_host)
+                        self._db_insert_result(result, target_host)
 
         # ── Summary ───────────────────────────────────────────────────────
         print()
@@ -1893,6 +1916,12 @@ def main() -> None:
                 pass
         existing.extend(extra_findings)
         findings_path.write_text(json.dumps(existing, indent=2))
+        if runner._fdb:
+            for ef in extra_findings:
+                try:
+                    runner._fdb.insert_finding(ef)
+                except Exception:
+                    pass
         _ok(f"Total findings (including third-party): {len(existing)}")
 
     if _MANAGED:
