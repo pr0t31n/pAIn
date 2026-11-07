@@ -464,7 +464,7 @@
       "kev": false,
       "remediation_brief": "No remediation required. Continue monitoring for new injection techniques and re-test periodically as the AI model or pipeline is updated.",
       "remediation_component": "",
-      "remediation_category": "",
+      "remediation_category": "Input Validation",
       "remediation_effort": "",
       "validation_tools": [
         "pain"
@@ -506,7 +506,7 @@
       "kev": false,
       "remediation_brief": "No remediation required — this is an informational record of test file generation.",
       "remediation_component": "",
-      "remediation_category": "",
+      "remediation_category": "Input Validation",
       "remediation_effort": "",
       "validation_tools": [],
       "_template": true
