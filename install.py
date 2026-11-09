@@ -130,7 +130,26 @@ def create_dirs():
         print(f"  ✓ {d}")
 
 
+def _check_prereqs():
+    """Verify required system tools are present before attempting install."""
+    REQUIRED = [
+        ("pip3", "pip3 — required for Python packages (apt: python3-pip)"),
+    ]
+    missing = []
+    for binary, desc in REQUIRED:
+        if not shutil.which(binary):
+            missing.append(f"  ✗ {binary}  ({desc})")
+    if missing:
+        print(f"\nERROR: Missing required prerequisites:\n")
+        for m in missing:
+            print(m)
+        print(f"\nInstall them first, then re-run install.py.\n")
+        sys.exit(1)
+
+
 def main():
+    _check_prereqs()
+
     print(f"\n{TOOL_NAME} — Installation")
     print("=" * 40)
     install_system_deps()
