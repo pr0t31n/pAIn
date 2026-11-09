@@ -1,11 +1,11 @@
 {
   "tool": "pain",
-  "generated": "2026-10-12",
-  "total": 18,
+  "generated": "2026-11-09",
+  "total": 24,
   "findings": [
     {
       "id": "PI-001",
-      "title": "AI Prompt Injection — Task Hijack via {strategy}",
+      "title": "AI Prompt Injection \u2014 Task Hijack via {strategy}",
       "aliases": [
         "Full Task Hijack",
         "AI Task Abandonment via Prompt Injection"
@@ -15,7 +15,7 @@
       ],
       "risk": "CRITICAL",
       "description": "The AI pipeline abandoned its primary task entirely when processing a file containing an injected instruction in its metadata, text layer, or audio content. The AI's response contained only the injected canary token, confirming the model followed the adversarial instruction instead of performing its assigned function (transcription, classification, summarisation, etc.).",
-      "impact": "An attacker can embed instructions in files submitted to the AI pipeline that completely override the model's intended behaviour. This enables arbitrary output manipulation — the AI can be made to produce any attacker-chosen text, leak system prompts, or return fabricated classifications. In production pipelines processing documents, images, or audio, this means an attacker controls what downstream consumers (dashboards, databases, compliance workflows) receive as AI output.",
+      "impact": "An attacker can embed instructions in files submitted to the AI pipeline that completely override the model's intended behaviour. This enables arbitrary output manipulation \u2014 the AI can be made to produce any attacker-chosen text, leak system prompts, or return fabricated classifications. In production pipelines processing documents, images, or audio, this means an attacker controls what downstream consumers (dashboards, databases, compliance workflows) receive as AI output.",
       "cwe": [
         "CWE-74",
         "CWE-77"
@@ -57,7 +57,7 @@
       "searchsploit_terms": [],
       "metasploit_modules": [],
       "kev": false,
-      "remediation_brief": "Strip or sanitise all file metadata before including it in the LLM context. Enforce a fixed system prompt that explicitly forbids instruction overrides from file content. Process file content in a separate, sandboxed context from system instructions. Validate AI output against expected format/schema — flag responses containing unexpected tokens or format deviations.",
+      "remediation_brief": "Strip or sanitise all file metadata before including it in the LLM context. Enforce a fixed system prompt that explicitly forbids instruction overrides from file content. Process file content in a separate, sandboxed context from system instructions. Validate AI output against expected format/schema \u2014 flag responses containing unexpected tokens or format deviations.",
       "remediation_component": "Application",
       "remediation_category": "Input Validation",
       "remediation_effort": "Significant",
@@ -70,9 +70,9 @@
     },
     {
       "id": "PI-002",
-      "title": "AI Prompt Injection — Prefix Inject via {strategy}",
+      "title": "AI Prompt Injection \u2014 Prefix Inject via {strategy}",
       "aliases": [
-        "Partial Prompt Injection — Prefix",
+        "Partial Prompt Injection \u2014 Prefix",
         "AI Output Prefix Manipulation"
       ],
       "source_tools": [
@@ -116,7 +116,7 @@
       "searchsploit_terms": [],
       "metasploit_modules": [],
       "kev": false,
-      "remediation_brief": "Enforce strict output schema validation — reject responses that do not match the expected format. Implement input sanitisation to strip embedded instructions from file metadata and text layers before LLM ingestion. Use delimiter-based prompt architecture to clearly separate system instructions from user/file content.",
+      "remediation_brief": "Enforce strict output schema validation \u2014 reject responses that do not match the expected format. Implement input sanitisation to strip embedded instructions from file metadata and text layers before LLM ingestion. Use delimiter-based prompt architecture to clearly separate system instructions from user/file content.",
       "remediation_component": "Application",
       "remediation_category": "Input Validation",
       "remediation_effort": "Significant",
@@ -129,7 +129,7 @@
     },
     {
       "id": "PI-003",
-      "title": "AI Prompt Injection — Classify Override via {strategy}",
+      "title": "AI Prompt Injection \u2014 Classify Override via {strategy}",
       "aliases": [
         "AI Classification Override",
         "Forced Classification via Injection"
@@ -138,7 +138,7 @@
         "pain"
       ],
       "risk": "CRITICAL",
-      "description": "The AI pipeline returned an attacker-controlled classification label instead of performing genuine content analysis. The injected instruction directed the model to output a specific category, and the model complied — either abandoning its own classification (CRITICAL) or appending the injected label alongside its real output (HIGH).",
+      "description": "The AI pipeline returned an attacker-controlled classification label instead of performing genuine content analysis. The injected instruction directed the model to output a specific category, and the model complied \u2014 either abandoning its own classification (CRITICAL) or appending the injected label alongside its real output (HIGH).",
       "impact": "An attacker can force arbitrary classification labels on submitted content, bypassing the AI's actual analysis. In document processing pipelines, this enables content to be misclassified (e.g. malware marked as benign, non-compliant documents marked as compliant, spam marked as legitimate). This directly undermines any automated decision-making that depends on the AI's classification output.",
       "cwe": [
         "CWE-74",
@@ -189,7 +189,7 @@
     },
     {
       "id": "PI-004",
-      "title": "AI Prompt Injection — System Probe via {strategy}",
+      "title": "AI Prompt Injection \u2014 System Probe via {strategy}",
       "aliases": [
         "System Prompt Leakage via Injection",
         "AI Configuration Disclosure"
@@ -199,7 +199,7 @@
       ],
       "risk": "CRITICAL",
       "description": "The AI pipeline disclosed its system prompt or internal configuration in response to an injected instruction embedded in file metadata or content. The injected payload directed the model to reveal its operating instructions, and the canary token's presence in the response confirms the model attempted to comply.",
-      "impact": "System prompt leakage reveals the AI pipeline's internal logic, guardrails, classification rules, and potentially sensitive configuration details to an attacker. This information enables targeted follow-up attacks — an attacker who knows the system prompt can craft payloads specifically designed to bypass its guardrails. System prompts may also contain API keys, internal endpoint URLs, or business logic that should remain confidential.",
+      "impact": "System prompt leakage reveals the AI pipeline's internal logic, guardrails, classification rules, and potentially sensitive configuration details to an attacker. This information enables targeted follow-up attacks \u2014 an attacker who knows the system prompt can craft payloads specifically designed to bypass its guardrails. System prompts may also contain API keys, internal endpoint URLs, or business logic that should remain confidential.",
       "cwe": [
         "CWE-200",
         "CWE-74"
@@ -249,7 +249,7 @@
     },
     {
       "id": "PI-005",
-      "title": "AI Prompt Injection — Authority Claim via {strategy}",
+      "title": "AI Prompt Injection \u2014 Authority Claim via {strategy}",
       "aliases": [
         "Social Engineering via Prompt Injection",
         "Claimed Authority Injection"
@@ -296,7 +296,7 @@
       "searchsploit_terms": [],
       "metasploit_modules": [],
       "kev": false,
-      "remediation_brief": "Implement strict instruction hierarchy — the model must never accept authority claims from file content. Use architectural separation: system instructions arrive through a trusted channel (API system role), while file content is clearly demarcated as untrusted user input. Train or fine-tune models to recognise and reject authority claim patterns in user content.",
+      "remediation_brief": "Implement strict instruction hierarchy \u2014 the model must never accept authority claims from file content. Use architectural separation: system instructions arrive through a trusted channel (API system role), while file content is clearly demarcated as untrusted user input. Train or fine-tune models to recognise and reject authority claim patterns in user content.",
       "remediation_component": "Application",
       "remediation_category": "Access Control",
       "remediation_effort": "Significant",
@@ -309,7 +309,7 @@
     },
     {
       "id": "PI-006",
-      "title": "AI Prompt Injection — {category} via {strategy} (Partial Injection)",
+      "title": "AI Prompt Injection \u2014 {category} via {strategy} (Partial Injection)",
       "aliases": [
         "Partial Prompt Injection",
         "AI Dual-Output Injection"
@@ -318,8 +318,8 @@
         "pain"
       ],
       "risk": "HIGH",
-      "description": "The AI pipeline completed its primary task but also followed the injected instruction — the canary token appeared in the response alongside legitimate task output. This indicates the model treated the embedded instruction as a secondary directive, executing it in addition to (rather than instead of) its assigned task.",
-      "impact": "Partial injection is more dangerous than full hijack in production contexts because it may go undetected — the pipeline still produces plausible-looking output while also executing attacker instructions. This enables data exfiltration (canary confirms the model reads and acts on embedded content), output poisoning (injected content mixed into legitimate results), and supply chain attacks (downstream consumers receive tainted output that appears valid).",
+      "description": "The AI pipeline completed its primary task but also followed the injected instruction \u2014 the canary token appeared in the response alongside legitimate task output. This indicates the model treated the embedded instruction as a secondary directive, executing it in addition to (rather than instead of) its assigned task.",
+      "impact": "Partial injection is more dangerous than full hijack in production contexts because it may go undetected \u2014 the pipeline still produces plausible-looking output while also executing attacker instructions. This enables data exfiltration (canary confirms the model reads and acts on embedded content), output poisoning (injected content mixed into legitimate results), and supply chain attacks (downstream consumers receive tainted output that appears valid).",
       "cwe": [
         "CWE-74"
       ],
@@ -366,7 +366,7 @@
     },
     {
       "id": "PI-007",
-      "title": "AI Prompt Injection — {category} via {strategy} (Stored Text Injection)",
+      "title": "AI Prompt Injection \u2014 {category} via {strategy} (Stored Text Injection)",
       "aliases": [
         "Stored Prompt Injection",
         "Persistent AI Injection",
@@ -376,7 +376,7 @@
         "pain"
       ],
       "risk": "HIGH",
-      "description": "The injected payload was not detected in the immediate AI response but was found persisted in stored results at the verify URL. This indicates a stored/persistent prompt injection — the AI pipeline transcribed, classified, or processed the injected content and wrote it to a database, search index, or result store where it is now accessible to other users or downstream systems.",
+      "description": "The injected payload was not detected in the immediate AI response but was found persisted in stored results at the verify URL. This indicates a stored/persistent prompt injection \u2014 the AI pipeline transcribed, classified, or processed the injected content and wrote it to a database, search index, or result store where it is now accessible to other users or downstream systems.",
       "impact": "Stored prompt injection is the AI equivalent of stored XSS. The injected payload persists in the application's data layer and may be rendered to other users, fed into downstream LLM calls (second-order injection), indexed by search engines, or used as training data. In Whisper/transcription pipelines, spoken injection payloads are faithfully transcribed and stored as text, creating a persistent attack vector that outlives the original file submission.",
       "cwe": [
         "CWE-79",
@@ -430,7 +430,7 @@
     },
     {
       "id": "PI-008",
-      "title": "AI Injection Resilient — {category} via {strategy}",
+      "title": "AI Injection Resilient \u2014 {category} via {strategy}",
       "aliases": [
         "Prompt Injection Resilient",
         "AI Pipeline Resilient to Injection"
@@ -440,7 +440,7 @@
       ],
       "risk": "INFO",
       "description": "The AI pipeline did not follow the injected instruction. The canary token was absent from both the immediate response and any stored results. The model completed its primary task without executing the embedded adversarial payload.",
-      "impact": "Informational — no security impact. The pipeline demonstrated resilience against this specific injection vector, category, and delivery strategy combination. This does not guarantee resilience against other payload variants, encoding schemes, or multi-turn attacks.",
+      "impact": "Informational \u2014 no security impact. The pipeline demonstrated resilience against this specific injection vector, category, and delivery strategy combination. This does not guarantee resilience against other payload variants, encoding schemes, or multi-turn attacks.",
       "cwe": [],
       "cve_examples": [],
       "cvss_v3_base": null,
@@ -473,7 +473,7 @@
     },
     {
       "id": "PI-009",
-      "title": "AI Injection Dry Run — {category} via {strategy}",
+      "title": "AI Injection Dry Run \u2014 {category} via {strategy}",
       "aliases": [
         "Prompt Injection Test File Generated"
       ],
@@ -482,7 +482,7 @@
       ],
       "risk": "INFO",
       "description": "A test file containing an injected adversarial payload was generated but not submitted to a target AI pipeline (--dry-run mode). The file is available in the test_files output directory for manual inspection or subsequent submission.",
-      "impact": "Informational — no security testing was performed. The generated file can be used for manual testing, integration into CI/CD security pipelines, or submitted to AI endpoints outside of pAIn's automated workflow.",
+      "impact": "Informational \u2014 no security testing was performed. The generated file can be used for manual testing, integration into CI/CD security pipelines, or submitted to AI endpoints outside of pAIn's automated workflow.",
       "cwe": [],
       "cve_examples": [],
       "cvss_v3_base": null,
@@ -504,7 +504,7 @@
       "searchsploit_terms": [],
       "metasploit_modules": [],
       "kev": false,
-      "remediation_brief": "No remediation required — this is an informational record of test file generation.",
+      "remediation_brief": "No remediation required \u2014 this is an informational record of test file generation.",
       "remediation_component": "",
       "remediation_category": "Input Validation",
       "remediation_effort": "",
@@ -513,14 +513,14 @@
     },
     {
       "id": "PI-010",
-      "title": "AI Prompt Injection — Task Hijack via pdf_docinfo_metadata",
+      "title": "AI Prompt Injection \u2014 Task Hijack via pdf_docinfo_metadata",
       "aliases": [],
       "source_tools": [
         "pain"
       ],
       "risk": "CRITICAL",
       "description": "The AI pipeline abandoned its primary task when processing a PDF whose document-info metadata (Author, Subject, Keywords, Creator) contained an injected instruction. PDF metadata is commonly extracted by document processing pipelines and passed to LLMs as context.",
-      "impact": "PDFs are the most common document format in enterprise AI pipelines. Document-info metadata injection succeeds silently because the injected content is invisible to the human viewer — only the pipeline's metadata extraction step sees it. This enables zero-interaction attacks where a legitimately-appearing PDF hijacks any AI pipeline that processes it.",
+      "impact": "PDFs are the most common document format in enterprise AI pipelines. Document-info metadata injection succeeds silently because the injected content is invisible to the human viewer \u2014 only the pipeline's metadata extraction step sees it. This enables zero-interaction attacks where a legitimately-appearing PDF hijacks any AI pipeline that processes it.",
       "cwe": [
         "CWE-74",
         "CWE-77"
@@ -565,7 +565,7 @@
     },
     {
       "id": "PI-011",
-      "title": "AI Prompt Injection — {category} via pdf_hidden_text_layer",
+      "title": "AI Prompt Injection \u2014 {category} via pdf_hidden_text_layer",
       "aliases": [
         "Hidden Text Layer PDF Injection",
         "White-on-White PDF Injection"
@@ -575,7 +575,7 @@
       ],
       "risk": "CRITICAL",
       "description": "The AI pipeline processed a PDF containing a hidden text layer (white text on white background) with an injected instruction. The text is invisible to human viewers but extracted by PDF text extraction libraries (pdfplumber, pdfminer, PyMuPDF) and passed to the LLM. The model followed the hidden instruction.",
-      "impact": "Hidden text layer injection is especially dangerous because the document appears completely legitimate to any human reviewer — the injected content is only visible to the machine pipeline. This enables supply-chain attacks where documents pass human approval processes before being fed to AI systems that then execute the hidden instructions.",
+      "impact": "Hidden text layer injection is especially dangerous because the document appears completely legitimate to any human reviewer \u2014 the injected content is only visible to the machine pipeline. This enables supply-chain attacks where documents pass human approval processes before being fed to AI systems that then execute the hidden instructions.",
       "cwe": [
         "CWE-74"
       ],
@@ -625,7 +625,7 @@
     },
     {
       "id": "PI-012",
-      "title": "AI Prompt Injection — {category} via png_text_chunk_metadata",
+      "title": "AI Prompt Injection \u2014 {category} via png_text_chunk_metadata",
       "aliases": [
         "PNG tEXt Chunk Injection",
         "Image Metadata Prompt Injection"
@@ -679,7 +679,7 @@
     },
     {
       "id": "PI-013",
-      "title": "AI Prompt Injection — {category} via {format}_text_overlay_ocr",
+      "title": "AI Prompt Injection \u2014 {category} via {format}_text_overlay_ocr",
       "aliases": [
         "OCR-Based Prompt Injection",
         "Visual Text Injection"
@@ -689,7 +689,7 @@
       ],
       "risk": "HIGH",
       "description": "The AI pipeline followed an injected instruction rendered as visible text in an image. The text was extracted via OCR (optical character recognition) or multimodal vision analysis and passed to the LLM, which treated it as an instruction rather than image content to be described or classified.",
-      "impact": "OCR/vision-based injection targets any pipeline that extracts text from images — document digitisation, receipt processing, medical imaging, ID verification, etc. Unlike metadata injection, the payload is technically visible, but in a real attack it would be placed in inconspicuous locations (small text, low contrast, marginal annotations) that human reviewers overlook.",
+      "impact": "OCR/vision-based injection targets any pipeline that extracts text from images \u2014 document digitisation, receipt processing, medical imaging, ID verification, etc. Unlike metadata injection, the payload is technically visible, but in a real attack it would be placed in inconspicuous locations (small text, low contrast, marginal annotations) that human reviewers overlook.",
       "cwe": [
         "CWE-74"
       ],
@@ -723,7 +723,7 @@
       "searchsploit_terms": [],
       "metasploit_modules": [],
       "kev": false,
-      "remediation_brief": "Implement content-type awareness in the LLM prompt — explicitly instruct the model that OCR-extracted text is untrusted content to be described, never instructions to be followed. Use a two-stage pipeline where OCR extraction and LLM analysis run in isolated contexts.",
+      "remediation_brief": "Implement content-type awareness in the LLM prompt \u2014 explicitly instruct the model that OCR-extracted text is untrusted content to be described, never instructions to be followed. Use a two-stage pipeline where OCR extraction and LLM analysis run in isolated contexts.",
       "remediation_component": "Application",
       "remediation_category": "Input Validation",
       "remediation_effort": "Significant",
@@ -734,7 +734,7 @@
     },
     {
       "id": "PI-014",
-      "title": "AI Prompt Injection — {category} via wav_spoken_audio_content",
+      "title": "AI Prompt Injection \u2014 {category} via wav_spoken_audio_content",
       "aliases": [
         "Spoken Audio Prompt Injection",
         "Speech-to-Text Injection"
@@ -744,7 +744,7 @@
       ],
       "risk": "CRITICAL",
       "description": "The AI pipeline followed an injected instruction delivered as synthesised speech in a WAV audio file. The speech-to-text (Whisper/ASR) component transcribed the spoken payload, and the downstream LLM treated the transcribed text as an instruction to execute rather than content to process.",
-      "impact": "Spoken audio injection is the most dangerous delivery vector for transcription pipelines because it exploits the fundamental purpose of the pipeline — faithfully transcribing speech. The injected instruction arrives through the same channel as legitimate audio content, making it impossible to filter at the transport layer. In customer service, medical dictation, legal transcription, and meeting-notes pipelines, spoken injection can alter transcripts, inject false records, or hijack downstream AI processing.",
+      "impact": "Spoken audio injection is the most dangerous delivery vector for transcription pipelines because it exploits the fundamental purpose of the pipeline \u2014 faithfully transcribing speech. The injected instruction arrives through the same channel as legitimate audio content, making it impossible to filter at the transport layer. In customer service, medical dictation, legal transcription, and meeting-notes pipelines, spoken injection can alter transcripts, inject false records, or hijack downstream AI processing.",
       "cwe": [
         "CWE-74"
       ],
@@ -788,7 +788,7 @@
     },
     {
       "id": "PI-015",
-      "title": "AI Prompt Injection — {category} via {format}_id3_tags",
+      "title": "AI Prompt Injection \u2014 {category} via {format}_id3_tags",
       "aliases": [
         "Audio Metadata Prompt Injection",
         "ID3 Tag Injection"
@@ -843,7 +843,7 @@
     },
     {
       "id": "PI-016",
-      "title": "AI Prompt Injection — {category} via docx_body_text_extraction",
+      "title": "AI Prompt Injection \u2014 {category} via docx_body_text_extraction",
       "aliases": [
         "DOCX Body Text Injection",
         "Word Document Prompt Injection"
@@ -853,7 +853,7 @@
       ],
       "risk": "CRITICAL",
       "description": "The AI pipeline followed an injected instruction placed in the body text of a DOCX (Word) document. The document XML body was extracted by the pipeline's document parser and passed to the LLM, which treated the injected instruction as authoritative.",
-      "impact": "DOCX is a standard enterprise document format. Body text injection is the most straightforward attack vector — the payload appears as regular document content. In document review, contract analysis, compliance checking, and summarisation pipelines, an attacker can embed instructions that redirect the AI's analysis, alter its conclusions, or force specific outputs.",
+      "impact": "DOCX is a standard enterprise document format. Body text injection is the most straightforward attack vector \u2014 the payload appears as regular document content. In document review, contract analysis, compliance checking, and summarisation pipelines, an attacker can embed instructions that redirect the AI's analysis, alter its conclusions, or force specific outputs.",
       "cwe": [
         "CWE-74"
       ],
@@ -887,7 +887,7 @@
       "searchsploit_terms": [],
       "metasploit_modules": [],
       "kev": false,
-      "remediation_brief": "Implement instruction boundary separation — ensure the LLM prompt clearly delineates system instructions from document content using robust delimiters. Apply content filtering to detect instruction-like patterns in extracted text before LLM ingestion.",
+      "remediation_brief": "Implement instruction boundary separation \u2014 ensure the LLM prompt clearly delineates system instructions from document content using robust delimiters. Apply content filtering to detect instruction-like patterns in extracted text before LLM ingestion.",
       "remediation_component": "Application",
       "remediation_category": "Input Validation",
       "remediation_effort": "Significant",
@@ -897,7 +897,7 @@
     },
     {
       "id": "PI-017",
-      "title": "AI Prompt Injection — {category} via docx_comment_text_extraction",
+      "title": "AI Prompt Injection \u2014 {category} via docx_comment_text_extraction",
       "aliases": [
         "DOCX Comment Injection",
         "Document Comment Prompt Injection"
@@ -907,7 +907,7 @@
       ],
       "risk": "HIGH",
       "description": "The AI pipeline followed an injected instruction placed in a DOCX document's comment annotations. Document comments are a secondary content channel that some parsers (python-docx, docx2txt) extract alongside body text. The pipeline included comment text in the LLM context, and the model treated the injected instruction as authoritative.",
-      "impact": "Comment-based injection targets document review and collaboration pipelines. Comments are a semi-hidden content channel — they appear in sidebars during editing but are often stripped or ignored in final renderings, making them a covert injection vector. Pipelines that extract and process all document content (including comments, headers, footers, and annotations) are vulnerable.",
+      "impact": "Comment-based injection targets document review and collaboration pipelines. Comments are a semi-hidden content channel \u2014 they appear in sidebars during editing but are often stripped or ignored in final renderings, making them a covert injection vector. Pipelines that extract and process all document content (including comments, headers, footers, and annotations) are vulnerable.",
       "cwe": [
         "CWE-74"
       ],
@@ -956,7 +956,7 @@
     },
     {
       "id": "PI-018",
-      "title": "AI Prompt Injection — {category} via zip_member_text_injection",
+      "title": "AI Prompt Injection \u2014 {category} via zip_member_text_injection",
       "aliases": [
         "ZIP Archive Injection",
         "Archive Member Prompt Injection"
@@ -1006,6 +1006,437 @@
       "remediation_effort": "Moderate",
       "validation_tools": [
         "pain"
+      ]
+    },
+    {
+      "id": "PI-019",
+      "title": "MCP Remote Code Execution via /exec Endpoint",
+      "aliases": [
+        "MCP RCE",
+        "MCP Command Execution",
+        "MCP /exec Exploit"
+      ],
+      "source_tools": [
+        "pain"
+      ],
+      "risk": "CRITICAL",
+      "description": "The MCP server exposes an /exec endpoint that allows unauthenticated remote command execution. Commands submitted via GET parameter are executed on the host OS with the privileges of the MCP server process.",
+      "impact": "Complete compromise of the MCP server host. An attacker can execute arbitrary OS commands, install backdoors, pivot to internal networks, exfiltrate data, or destroy resources. If the MCP server runs as root or with elevated privileges, the attacker gains full system control.",
+      "cwe": [
+        "CWE-78",
+        "CWE-94"
+      ],
+      "cve_examples": [],
+      "cvss_v3_base": 10.0,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+      "nessus_plugin_ids": [],
+      "qualys_qids": [],
+      "owasp_web": "A03:2021 Injection",
+      "owasp_api": "",
+      "nist_csf2": [
+        "PR.AC-4",
+        "DE.CM-1"
+      ],
+      "nist_800_53": [
+        "SI-10",
+        "AC-3",
+        "CM-7"
+      ],
+      "nist_800_171": [
+        "3.1.7",
+        "3.13.6"
+      ],
+      "pci_dss_4": [
+        "6.2.4",
+        "11.3.1"
+      ],
+      "iso_27001": [
+        "A.14.2.5"
+      ],
+      "iso_27002": [],
+      "soc2": [
+        "CC6.1"
+      ],
+      "hitrust": [],
+      "gdpr": [],
+      "mitre_attack": [
+        {
+          "technique": "T1059",
+          "tactic": "Execution",
+          "name": "Command and Scripting Interpreter"
+        },
+        {
+          "technique": "T1190",
+          "tactic": "Initial Access",
+          "name": "Exploit Public-Facing Application"
+        }
+      ],
+      "searchsploit_terms": [
+        "mcp rce",
+        "model context protocol"
+      ],
+      "metasploit_modules": [],
+      "kev": false,
+      "remediation_brief": "Remove the /exec endpoint entirely. If command execution is a legitimate requirement, restrict it to authenticated administrators, implement strict command allowlisting, and run the MCP server with minimal OS privileges.",
+      "remediation_component": "Application",
+      "remediation_category": "Access Control",
+      "remediation_effort": "Easy",
+      "validation_tools": [
+        "pain",
+        "mcp-hunter",
+        "curl"
+      ]
+    },
+    {
+      "id": "PI-020",
+      "title": "MCP Arbitrary File Read via /file Endpoint",
+      "aliases": [
+        "MCP LFI",
+        "MCP Path Traversal",
+        "MCP /file Exploit"
+      ],
+      "source_tools": [
+        "pain"
+      ],
+      "risk": "CRITICAL",
+      "description": "The MCP server exposes a /file endpoint that allows reading arbitrary files from the host filesystem. Path traversal is not restricted, enabling access to sensitive system files including /etc/passwd, /etc/shadow, /proc/self/environ, and application configuration files.",
+      "impact": "Exposure of credentials, API keys, and secrets stored in environment variables or configuration files. Access to /etc/shadow enables offline password cracking. Reading application source code and configuration reveals further attack surface. In containerized environments, /proc/self/environ often contains database credentials and API tokens.",
+      "cwe": [
+        "CWE-22",
+        "CWE-200"
+      ],
+      "cve_examples": [],
+      "cvss_v3_base": 8.6,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:N/A:N",
+      "nessus_plugin_ids": [],
+      "qualys_qids": [],
+      "owasp_web": "A01:2021 Broken Access Control",
+      "owasp_api": "",
+      "nist_csf2": [
+        "PR.AC-4",
+        "PR.DS-5"
+      ],
+      "nist_800_53": [
+        "AC-3",
+        "AC-6",
+        "SI-10"
+      ],
+      "nist_800_171": [
+        "3.1.1",
+        "3.1.2"
+      ],
+      "pci_dss_4": [
+        "6.2.4"
+      ],
+      "iso_27001": [
+        "A.14.2.5"
+      ],
+      "iso_27002": [],
+      "soc2": [
+        "CC6.1"
+      ],
+      "hitrust": [],
+      "gdpr": [],
+      "mitre_attack": [
+        {
+          "technique": "T1005",
+          "tactic": "Collection",
+          "name": "Data from Local System"
+        },
+        {
+          "technique": "T1083",
+          "tactic": "Discovery",
+          "name": "File and Directory Discovery"
+        }
+      ],
+      "searchsploit_terms": [
+        "mcp lfi",
+        "path traversal"
+      ],
+      "metasploit_modules": [],
+      "kev": false,
+      "remediation_brief": "Remove the /file endpoint entirely or restrict to a specific allowlisted directory. Implement path canonicalization to prevent traversal attacks. Never expose filesystem read access to unauthenticated users.",
+      "remediation_component": "Application",
+      "remediation_category": "Input Validation",
+      "remediation_effort": "Easy",
+      "validation_tools": [
+        "pain",
+        "mcp-hunter",
+        "curl"
+      ]
+    },
+    {
+      "id": "PI-021",
+      "title": "MCP Environment Variables Exposed via /env Endpoint",
+      "aliases": [
+        "MCP Env Dump",
+        "MCP Secret Exposure via /env"
+      ],
+      "source_tools": [
+        "pain"
+      ],
+      "risk": "HIGH",
+      "description": "The MCP server's /env endpoint returns the full process environment including sensitive variables such as API keys, database connection strings, and cloud credentials. No authentication is required.",
+      "impact": "Direct exposure of secrets stored in environment variables. Cloud credentials (AWS_SECRET_ACCESS_KEY, OPENAI_API_KEY, etc.) enable lateral movement to cloud services. Database credentials enable direct data access bypassing application controls.",
+      "cwe": [
+        "CWE-200",
+        "CWE-532"
+      ],
+      "cve_examples": [],
+      "cvss_v3_base": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "nessus_plugin_ids": [],
+      "qualys_qids": [],
+      "owasp_web": "A05:2021 Security Misconfiguration",
+      "owasp_api": "",
+      "nist_csf2": [
+        "PR.DS-1",
+        "PR.AC-4"
+      ],
+      "nist_800_53": [
+        "SC-28",
+        "IA-5"
+      ],
+      "nist_800_171": [
+        "3.13.16"
+      ],
+      "pci_dss_4": [
+        "2.2.7",
+        "8.6.3"
+      ],
+      "iso_27001": [
+        "A.12.4.1"
+      ],
+      "iso_27002": [],
+      "soc2": [
+        "CC6.1"
+      ],
+      "hitrust": [],
+      "gdpr": [],
+      "mitre_attack": [
+        {
+          "technique": "T1552.001",
+          "tactic": "Credential Access",
+          "name": "Unsecured Credentials: Credentials In Files"
+        }
+      ],
+      "searchsploit_terms": [],
+      "metasploit_modules": [],
+      "kev": false,
+      "remediation_brief": "Remove the /env endpoint. Secrets should be managed via a dedicated secrets manager (HashiCorp Vault, AWS Secrets Manager) rather than environment variables accessible through debug endpoints.",
+      "remediation_component": "Configuration",
+      "remediation_category": "Cryptography",
+      "remediation_effort": "Easy",
+      "validation_tools": [
+        "pain",
+        "mcp-hunter",
+        "curl"
+      ]
+    },
+    {
+      "id": "PI-022",
+      "title": "MCP Exec-Capable Tool Exploitable via JSON-RPC",
+      "aliases": [
+        "MCP Tool RCE",
+        "MCP JSON-RPC Command Execution"
+      ],
+      "source_tools": [
+        "pain"
+      ],
+      "risk": "CRITICAL",
+      "description": "An MCP server tool with command execution capability (identified by name pattern: exec, shell, system, run_command) accepted and executed arbitrary commands when invoked via JSON-RPC tools/call. The canary token was present in the tool's response, confirming code execution.",
+      "impact": "Attackers can execute arbitrary OS commands through the MCP tool interface without direct /exec endpoint access. This is particularly dangerous because tool invocation is the legitimate MCP protocol path \u2014 the attack surface is inherent in the tool design, not a debug endpoint that can simply be removed.",
+      "cwe": [
+        "CWE-78",
+        "CWE-94"
+      ],
+      "cve_examples": [],
+      "cvss_v3_base": 9.8,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "nessus_plugin_ids": [],
+      "qualys_qids": [],
+      "owasp_web": "A03:2021 Injection",
+      "owasp_api": "",
+      "nist_csf2": [
+        "PR.AC-4",
+        "DE.CM-1"
+      ],
+      "nist_800_53": [
+        "SI-10",
+        "AC-3",
+        "CM-7"
+      ],
+      "nist_800_171": [
+        "3.1.7",
+        "3.13.6"
+      ],
+      "pci_dss_4": [
+        "6.2.4"
+      ],
+      "iso_27001": [
+        "A.14.2.5"
+      ],
+      "iso_27002": [],
+      "soc2": [
+        "CC6.1"
+      ],
+      "hitrust": [],
+      "gdpr": [],
+      "mitre_attack": [
+        {
+          "technique": "T1059",
+          "tactic": "Execution",
+          "name": "Command and Scripting Interpreter"
+        },
+        {
+          "technique": "T1106",
+          "tactic": "Execution",
+          "name": "Native API"
+        }
+      ],
+      "searchsploit_terms": [],
+      "metasploit_modules": [],
+      "kev": false,
+      "remediation_brief": "Remove or rename exec-capable tools. If command execution is required, implement strict input validation and command allowlisting within the tool handler. Require authentication for all JSON-RPC tool invocations.",
+      "remediation_component": "Application",
+      "remediation_category": "Input Validation",
+      "remediation_effort": "Moderate",
+      "validation_tools": [
+        "pain",
+        "mcp-hunter"
+      ]
+    },
+    {
+      "id": "PI-023",
+      "title": "MCP Tool Abuse via Prompt Injection",
+      "aliases": [
+        "MCP Prompt Injection",
+        "MCP Tool Manipulation"
+      ],
+      "source_tools": [
+        "pain"
+      ],
+      "risk": "HIGH",
+      "description": "An MCP server tool responded to prompt injection payloads embedded in its input, executing attacker-controlled instructions instead of its intended function. The canary token appeared in the tool response, confirming the tool processed the injected directive.",
+      "impact": "Attackers can manipulate MCP tool behavior through crafted inputs, potentially bypassing access controls, extracting sensitive data from tool context, or chaining tool calls to achieve lateral movement within the MCP server's capabilities.",
+      "cwe": [
+        "CWE-74",
+        "CWE-1321"
+      ],
+      "cve_examples": [],
+      "cvss_v3_base": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "nessus_plugin_ids": [],
+      "qualys_qids": [],
+      "owasp_web": "A03:2021 Injection",
+      "owasp_api": "",
+      "nist_csf2": [
+        "PR.DS-1",
+        "DE.CM-6"
+      ],
+      "nist_800_53": [
+        "SI-10",
+        "SC-18"
+      ],
+      "nist_800_171": [],
+      "pci_dss_4": [
+        "6.2.4"
+      ],
+      "iso_27001": [
+        "A.14.2.5"
+      ],
+      "iso_27002": [],
+      "soc2": [
+        "CC6.1"
+      ],
+      "hitrust": [],
+      "gdpr": [],
+      "mitre_attack": [
+        {
+          "technique": "T1059.007",
+          "tactic": "Execution",
+          "name": "Command and Scripting Interpreter: JavaScript"
+        },
+        {
+          "technique": "T1071.001",
+          "tactic": "Command and Control",
+          "name": "Application Layer Protocol: Web Protocols"
+        }
+      ],
+      "searchsploit_terms": [],
+      "metasploit_modules": [],
+      "kev": false,
+      "remediation_brief": "Implement input sanitization on all tool inputs. Add output filtering to prevent sensitive data leakage. Use separate system and user contexts for tool instructions vs. user-provided data.",
+      "remediation_component": "Application",
+      "remediation_category": "Input Validation",
+      "remediation_effort": "Significant",
+      "validation_tools": [
+        "pain",
+        "garak"
+      ]
+    },
+    {
+      "id": "PI-024",
+      "title": "MCP Debug Information Exposure",
+      "aliases": [
+        "MCP Debug Endpoint",
+        "MCP /debug Information Leak"
+      ],
+      "source_tools": [
+        "pain"
+      ],
+      "risk": "HIGH",
+      "description": "The MCP server's /debug endpoint returns internal server state including configuration, loaded tools, connection details, and potentially secrets. No authentication is required.",
+      "impact": "Debug information reveals internal architecture, tool configurations, and potentially embedded credentials. This information enables targeted attacks against specific MCP tools and the underlying infrastructure.",
+      "cwe": [
+        "CWE-200",
+        "CWE-215"
+      ],
+      "cve_examples": [],
+      "cvss_v3_base": 7.5,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "nessus_plugin_ids": [],
+      "qualys_qids": [],
+      "owasp_web": "A05:2021 Security Misconfiguration",
+      "owasp_api": "",
+      "nist_csf2": [
+        "PR.DS-1"
+      ],
+      "nist_800_53": [
+        "CM-7",
+        "SC-28"
+      ],
+      "nist_800_171": [],
+      "pci_dss_4": [
+        "2.2.7"
+      ],
+      "iso_27001": [
+        "A.12.4.1"
+      ],
+      "iso_27002": [],
+      "soc2": [
+        "CC6.1"
+      ],
+      "hitrust": [],
+      "gdpr": [],
+      "mitre_attack": [
+        {
+          "technique": "T1082",
+          "tactic": "Discovery",
+          "name": "System Information Discovery"
+        }
+      ],
+      "searchsploit_terms": [],
+      "metasploit_modules": [],
+      "kev": false,
+      "remediation_brief": "Disable debug endpoints in production. If needed for development, gate behind strong authentication and restrict to internal/loopback interfaces only.",
+      "remediation_component": "Configuration",
+      "remediation_category": "Access Control",
+      "remediation_effort": "Easy",
+      "validation_tools": [
+        "pain",
+        "mcp-hunter",
+        "curl"
       ]
     }
   ],
