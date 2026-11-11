@@ -2,6 +2,7 @@
 """pAIn installer — multi-platform."""
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -21,6 +22,35 @@ def _run(cmd, check: bool = True, **kw):
 
 def _has(binary: str) -> bool:
     return shutil.which(binary) is not None
+
+
+def _brew_safe(args):
+    """Run brew with args, delegating to SUDO_USER when running as root."""
+    brew_path = shutil.which("brew")
+    if not brew_path:
+        for p in ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]:
+            if os.path.isfile(p):
+                brew_path = p
+                break
+    if not brew_path:
+        print("  [!] brew not found — skipping")
+        return
+    cmd = [brew_path] + args
+    if os.geteuid() == 0:
+        user = os.environ.get("SUDO_USER", "").strip()
+        if not user or user == "root":
+            try:
+                r = subprocess.run(["logname"], capture_output=True, text=True, timeout=3)
+                user = r.stdout.strip() if r.returncode == 0 else ""
+            except Exception:
+                user = ""
+        if not user or user == "root":
+            print(f"  [!] Running as root with no real user — skipping: brew {' '.join(args)}")
+            return
+        cmd = ["sudo", "-u", user, "-H"] + cmd
+    print(f"  → {' '.join(cmd)}")
+    subprocess.run(cmd, check=False)
+
 
 
 
@@ -73,7 +103,7 @@ def install_system_deps():
             if not _dpkg_installed("ffmpeg"):
                 _run(["apt-get", "install", "-y", "ffmpeg"], check=False)
         elif sys.platform == "darwin" and _has("brew"):
-            _run(["brew", "install", "ffmpeg"], check=False)
+            _brew_safe(["install", "ffmpeg"])
         else:
             print("  ! Could not auto-install ffmpeg — install manually")
 
@@ -86,7 +116,7 @@ def install_system_deps():
             if not _dpkg_installed("espeak-ng"):
                 _run(["apt-get", "install", "-y", "espeak-ng"], check=False)
         elif sys.platform == "darwin" and _has("brew"):
-            _run(["brew", "install", "espeak"], check=False)
+            _brew_safe(["install", "espeak"])
         else:
             print("  ! espeak not auto-installed — audio spoken-payload tests will be skipped")
 
